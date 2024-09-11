@@ -1,7 +1,7 @@
 import { UserType } from "../models/users";
 
 export interface IUserRepository {
-    createUser(user: Omit<UserType, 'id' | 'phone' | 'role' | 'has_subscription' |'created_at'>): Promise<UserType>;
+    createUser(user: Omit<UserType, 'id' | 'name' |  'phone' | 'role' | 'has_subscription' |'created_at'>): Promise<UserType>;
 
     getUserById(id: number): Promise<UserType | null>;
 

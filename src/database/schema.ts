@@ -6,10 +6,20 @@ export const users = pgTable('users', {
     id: serial('id').primaryKey(),
     email: text('email').unique().notNull(),
     password: text('password').notNull(),
-    name: text('name').notNull(),
+    name: text('name'),
     phone: text('phone').unique(),
     role: varchar('role', { length: 50 }).default('user').notNull(),
     has_subscription: boolean('has_subscription').notNull().default(false),
+    created_at: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const individuals = pgTable('individuals', {
+    id: serial('id').primaryKey(),
+    name: text('name').notNull(),
+    title: text('title').notNull(),
+    prompt: text('prompt').notNull(),
+    smallImagePath: varchar('image_path', { length: 500 }).notNull(),
+    fullImagePath: varchar('image_path', { length: 500 }).notNull(),
     created_at: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -23,7 +33,7 @@ export const subscriptions = pgTable('subscriptions', {
 
 export const questions = pgTable('questions', {
     id: serial('id').primaryKey(),
-    question_text: text('question_text').notNull(),
+    question_text: text('question_text').notNull().unique(),
     created_at: timestamp('created_at').defaultNow().notNull(),
 });
 

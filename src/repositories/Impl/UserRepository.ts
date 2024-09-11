@@ -5,12 +5,11 @@ import { IUserRepository } from '../IUserRepository.js';
 import { UserType } from '../../models/users.js';
 
 export class UserRepository implements IUserRepository {
-    async createUser(user: Omit<UserType, 'id' | 'phone' |'role' | 'has_subscription' |'created_at'>): Promise<UserType> {
+    async createUser(user: Omit<UserType, 'id' | 'name' | 'phone' |'role' | 'has_subscription' |'created_at'>): Promise<UserType> {
         const [newUser] = await db.insert(users)
             .values({
                 email: user.email,
                 password: user.password,
-                name: user.name,
             }).returning();
 
         return newUser;

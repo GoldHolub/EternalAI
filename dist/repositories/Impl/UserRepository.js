@@ -7,7 +7,6 @@ export class UserRepository {
             .values({
             email: user.email,
             password: user.password,
-            name: user.name,
         }).returning();
         return newUser;
     }

@@ -1,7 +1,7 @@
 import { UserType } from "../models/users";
 
 export interface IUserService {
-    registerUser(userData: Omit<UserType, 'id' | 'phone' | 'created_at' | 'has_subscription' | 'role'>): Promise<UserType>;
+    registerUser(userData: Omit<UserType, 'id' | 'name' |'phone' | 'created_at' | 'has_subscription' | 'role'>): Promise<UserType>;
 
     login(email: string, password: string): Promise<{ token: string } | null>;
 

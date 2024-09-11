@@ -1,13 +1,13 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { IUserService } from "../services/IUserService";
 import { UserType } from "../models/users";
 
 export class UserController {
     constructor(private userService: IUserService) { }
 
-    async registerUser(req: Request, res: Response): Promise<void> {
+    async registerUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
-            const userData: Omit<UserType, 'id' | 'phone' | 'created_at' | 'has_subscription' | 'role'> = req.body;
+            const userData: Omit<UserType, 'id' | 'name' |'phone' | 'created_at' | 'has_subscription' | 'role'> = req.body;
             const newUser = await this.userService.registerUser(userData);
 
             res.status(201).json({ id: newUser.id, email: newUser.email });
@@ -16,7 +16,7 @@ export class UserController {
         }
     }
 
-    async login(req: Request, res: Response): Promise<void> {
+    async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const { email, password } = req.body;
             const result = await this.userService.login(email, password);
@@ -26,11 +26,11 @@ export class UserController {
                 res.status(401).json({ error: 'Invalid credentials' });
             }
         } catch (error) {
-            res.status(500).json({ error: 'Failed to login' });
+            next(error);
         }
     }
 
-    async getUserById(req: Request, res: Response): Promise<void> {
+    async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             // @ts-ignore
             const id = req.user.id;
@@ -48,11 +48,11 @@ export class UserController {
                 res.status(404).json({ error: 'User not found' });
             }
         } catch (error) {
-            res.status(500).json({ error: 'Failed to retrieve user' });
+            next(error);
         }
     }
 
-    async getUserByEmail(req: Request, res: Response): Promise<void> {
+    async getUserByEmail(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const email = req.params.email;
             const user = await this.userService.getUserByEmail(email);
@@ -62,11 +62,11 @@ export class UserController {
                 res.status(404).json({ error: 'User not found' });
             }
         } catch (error) {
-            res.status(500).json({ error: 'Failed to retrieve user' });
+            next(error);
         }
     }
 
-    async updateUser(req: Request, res: Response): Promise<void> {
+    async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             // @ts-ignore
             const id = req.user.id;
@@ -85,7 +85,7 @@ export class UserController {
                 res.status(404).json({ error: 'User not found' });
             }
         } catch (error: any) {
-            res.status(500).json({ error: `Failed to update user.` });
+            next(error);
         }
     }
 }

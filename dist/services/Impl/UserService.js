@@ -125,7 +125,7 @@ export class UserService {
         const schema = Joi.object({
             email: Joi.string().email().required(),
             password: Joi.string().min(8).required(),
-            name: Joi.string().required(),
+            //name: Joi.string().required(),
             //phone: Joi.string().required(),
         });
         const { error } = schema.validate(userData);

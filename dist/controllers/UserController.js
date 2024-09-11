@@ -3,7 +3,7 @@ export class UserController {
     constructor(userService) {
         this.userService = userService;
     }
-    async registerUser(req, res) {
+    async registerUser(req, res, next) {
         try {
             const userData = req.body;
             const newUser = await this.userService.registerUser(userData);
@@ -13,7 +13,7 @@ export class UserController {
             res.status(500).json({ error: 'Failed to register user' });
         }
     }
-    async login(req, res) {
+    async login(req, res, next) {
         try {
             const { email, password } = req.body;
             const result = await this.userService.login(email, password);
@@ -25,10 +25,10 @@ export class UserController {
             }
         }
         catch (error) {
-            res.status(500).json({ error: 'Failed to login' });
+            next(error);
         }
     }
-    async getUserById(req, res) {
+    async getUserById(req, res, next) {
         try {
             // @ts-ignore
             const id = req.user.id;
@@ -48,10 +48,10 @@ export class UserController {
             }
         }
         catch (error) {
-            res.status(500).json({ error: 'Failed to retrieve user' });
+            next(error);
         }
     }
-    async getUserByEmail(req, res) {
+    async getUserByEmail(req, res, next) {
         try {
             const email = req.params.email;
             const user = await this.userService.getUserByEmail(email);
@@ -63,10 +63,10 @@ export class UserController {
             }
         }
         catch (error) {
-            res.status(500).json({ error: 'Failed to retrieve user' });
+            next(error);
         }
     }
-    async updateUser(req, res) {
+    async updateUser(req, res, next) {
         try {
             // @ts-ignore
             const id = req.user.id;
@@ -87,7 +87,7 @@ export class UserController {
             }
         }
         catch (error) {
-            res.status(500).json({ error: `Failed to update user. ${error.message}` });
+            next(error);
         }
     }
 }

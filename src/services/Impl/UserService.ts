@@ -12,7 +12,7 @@ export class UserService implements IUserService {
         this.userRepository = userRepository;
     }
 
-    async registerUser(userData: Omit<UserType, 'id' | 'phone' |'created_at' | 'has_subscription' | 'role'>): Promise<UserType> {
+    async registerUser(userData: Omit<UserType, 'id' | 'name' | 'phone' |'created_at' | 'has_subscription' | 'role'>): Promise<UserType> {
         try {
             this.validateUserData(userData);
 
@@ -140,11 +140,11 @@ export class UserService implements IUserService {
         }
     }
 
-    private validateUserData(userData: Omit<UserType, 'id' | 'phone' | 'created_at' | 'has_subscription' | 'role'>) {
+    private validateUserData(userData: Omit<UserType, 'id' | 'name' |  'phone' | 'created_at' | 'has_subscription' | 'role'>) {
         const schema = Joi.object({
             email: Joi.string().email().required(),
             password: Joi.string().min(8).required(),
-            name: Joi.string().required(),
+            //name: Joi.string().required(),
             //phone: Joi.string().required(),
         });
 
