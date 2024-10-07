@@ -1,42 +1,167 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
+import { OAuth2Client } from 'google-auth-library';
+import { EmailService } from './EmailService.js';
+import { TokenService } from './TokenService.js';
+import { PaymentService } from './PaymentService.js';
+const client = new OAuth2Client({
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+});
+const emailService = new EmailService();
+const tokenService = new TokenService();
+const paymentService = new PaymentService();
 export class UserService {
     userRepository;
     constructor(userRepository) {
         this.userRepository = userRepository;
     }
-    async registerUser(userData) {
+    async registerUser(email, password, name, googleToken, sharedToken) {
         try {
-            this.validateUserData(userData);
-            const hashedPassword = await bcrypt.hash(userData.password, 10);
-            const newUser = await this.userRepository.createUser({
-                ...userData,
-                password: hashedPassword,
-            });
-            return newUser;
+            if (googleToken) {
+                const validGoogleToken = await this.verifyGoogleToken(googleToken);
+                if (!validGoogleToken) {
+                    throw new Error('Invalid Google token');
+                }
+                if (!validGoogleToken.email) {
+                    return null;
+                }
+                let user = await this.userRepository.getUserByEmail(validGoogleToken.email);
+                if (!user) {
+                    const randomPassword = await bcrypt.hash(Math.random().toString(36).slice(-8), 10);
+                    user = await this.userRepository.createUser(validGoogleToken.email, randomPassword, name);
+                    if (validGoogleToken.email_verified) {
+                        await this.userRepository.updateUser(user.id, { isGoogleVerified: true, isVerified: true, });
+                    }
+                    this.giveFreeAnswersToUser(sharedToken);
+                }
+                const token = this.createToken(user);
+                return token ? { token } : null;
+            }
+            if (!email || !password) {
+                throw new Error('Email and password are required');
+            }
+            let user = await this.userRepository.getUserByEmail(email);
+            if (user && user.isVerified) {
+                const token = this.createToken(user);
+                return token ? { token } : null;
+            }
+            else if (user && !user.isVerified) {
+                return null;
+            }
+            if (!user) {
+                this.validateUserData({ email, password });
+                const hashedPassword = await bcrypt.hash(password, 10);
+                const newUser = await this.userRepository.createUser(email, hashedPassword);
+                const emailConfirmationToken = await tokenService.generateVerificationToken(newUser.id, newUser.email);
+                await emailService.sendVerificationEmail(newUser.email, emailConfirmationToken);
+                this.giveFreeAnswersToUser(sharedToken);
+            }
+            return null;
         }
         catch (error) {
             console.error('Error registering user:', error);
             throw new Error('Failed to register user. Please try again later.');
         }
     }
-    async login(email, password) {
+    async login(email, password, accessToken) {
         try {
-            const user = await this.userRepository.getUserByEmail(email);
-            if (!user) {
-                return null;
+            let user;
+            if (accessToken) {
+                const validGoogleToken = await this.verifyGoogleToken(accessToken);
+                if (!validGoogleToken || !validGoogleToken.email) {
+                    return null;
+                }
+                user = await this.userRepository.getUserByEmail(validGoogleToken.email);
+                if (!user) {
+                    return null;
+                }
             }
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
-                return null;
+            else if (email && password) {
+                user = await this.userRepository.getUserByEmail(email);
+                if (!user || !user.isVerified) {
+                    console.log('User not found or not verified');
+                    return null;
+                }
+                const isPasswordValid = await bcrypt.compare(password, user.password);
+                if (!isPasswordValid) {
+                    //throw new Error('Invalid password');
+                    return null;
+                }
             }
-            const token = jwt.sign({ userId: user.id, role: user.role, hasSubscription: user.has_subscription }, process.env.JWT_SECRET, { expiresIn: '1h' });
-            return { token };
+            else {
+                return null; // Neither password nor Google token provided
+            }
+            const token = this.createToken(user);
+            return { token, isVerified: user.isVerified };
         }
         catch (error) {
             console.error('Error during login:', error);
             throw new Error('Login failed. Please try again later.');
+        }
+    }
+    async verifyUserEmailToken(token) {
+        try {
+            const tokenData = tokenService.verifyToken(token);
+            if (tokenData) {
+                const user = await this.userRepository.getUserById(tokenData.userId);
+                if (!user) {
+                    throw new Error('User not found');
+                }
+                else if (tokenData.email !== user.email && user.isVerified) {
+                    if (user.has_subscription) {
+                        await paymentService.updateUserStripeAccountEmail(user.email, tokenData.email);
+                    }
+                    const updatedUser = await this.userRepository.updateUser(user.id, { email: tokenData.email });
+                    return updatedUser?.email;
+                }
+                else if (tokenData.email === user.email) {
+                    const updatedUser = await this.userRepository.updateUser(user.id, { isVerified: true });
+                    return updatedUser?.email;
+                }
+            }
+            throw new Error('Invalid token');
+        }
+        catch (error) {
+            throw new Error(error);
+        }
+    }
+    async sendForgottenPasswordEmail(email) {
+        try {
+            if (!email)
+                throw new Error('Email is required');
+            const user = await this.userRepository.getUserByEmail(email);
+            if (!user || !user.email) {
+                return false;
+            }
+            const token = await tokenService.generateVerificationToken(user.id, user.email);
+            await emailService.sendPasswordResetEmail(user.email, token);
+            return true;
+        }
+        catch (error) {
+            console.error('Error resetting password:', error);
+            throw new Error('Failed to send password reset email. Please try again later.');
+        }
+    }
+    async resetForgottenPassword(token, newPassword) {
+        try {
+            const tokenData = tokenService.verifyToken(token);
+            if (!tokenData)
+                throw new Error(`Invalid token`);
+            const user = await this.userRepository.getUserById(tokenData.userId);
+            if (!user)
+                throw new Error(`User not found`);
+            if (user.email !== tokenData.email)
+                throw new Error(`Wrong token`);
+            if (!newPassword)
+                throw new Error(`New password is required`);
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            const updatedUser = await this.userRepository.updateUser(user.id, { password: hashedPassword });
+            return true;
+        }
+        catch (error) {
+            throw new Error(`Can't reset password. ${error.message}`);
         }
     }
     async getUserById(id) {
@@ -57,17 +182,24 @@ export class UserService {
             throw new Error('Failed to fetch user. Please try again later.');
         }
     }
-    async updateUser(id, updates) {
+    async updateUser(user, updates) {
         try {
-            this.validateUpdateData(updates);
-            if (updates.password) {
-                updates.password = await bcrypt.hash(updates.password, 10);
+            const validUpdates = this.filterValidUpdateData(updates);
+            if (validUpdates.password) {
+                validUpdates.password = await bcrypt.hash(validUpdates.password, 10);
             }
-            return await this.userRepository.updateUser(id, updates);
+            if (validUpdates.email && validUpdates.email !== user.email) {
+                const existingUser = await this.userRepository.getUserByEmail(validUpdates.email);
+                if (existingUser && existingUser.id !== user.id)
+                    throw new Error('Email already in use');
+                emailService.sendVerificationEmail(validUpdates.email, await tokenService.generateVerificationToken(user.id, validUpdates.email));
+                validUpdates.email = user.email;
+            }
+            return await this.userRepository.updateUser(user.id, validUpdates);
         }
         catch (error) {
             console.error('Error updating user:', error);
-            throw new Error('Failed to update user. Please try again later.');
+            throw new Error(`Failed to update user. ${error.message}.`);
         }
     }
     async deleteUser(id) {
@@ -125,9 +257,10 @@ export class UserService {
         const schema = Joi.object({
             email: Joi.string().email().required(),
             password: Joi.string().min(8).required(),
-            //name: Joi.string().required(),
-            //phone: Joi.string().required(),
         });
+        if (!userData.email.includes('@gmail.com')) {
+            throw new Error(`Validation error: email must be a Gmail address`);
+        }
         const { error } = schema.validate(userData);
         if (error) {
             throw new Error(`Validation error: ${error.message}`);
@@ -144,6 +277,42 @@ export class UserService {
         if (error) {
             throw new Error(`Validation error: ${error.message}`);
         }
+    }
+    filterValidUpdateData(updates) {
+        const validUpdates = {};
+        Object.keys(updates).forEach((key) => {
+            const value = updates[key];
+            if (value) {
+                const s = validUpdates[key];
+                //@ts-ignore
+                validUpdates[key] = value;
+            }
+        });
+        this.validateUpdateData(validUpdates);
+        return validUpdates;
+    }
+    async verifyGoogleToken(accessToken) {
+        const info = await client.getTokenInfo(accessToken);
+        if (!info)
+            throw new Error('Invalid Google token');
+        return info;
+    }
+    createToken(user) {
+        const token = jwt.sign({ userId: user.id, role: user.role, hasSubscription: user.has_subscription }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        return token;
+    }
+    async giveFreeAnswersToUser(sharedToken) {
+        console.log(`shared token: ${sharedToken}`);
+        if (!sharedToken)
+            return;
+        console.log(`shared token is present: ${sharedToken}`);
+        const userData = tokenService.verifySharedToken(sharedToken);
+        if (!userData?.userId)
+            throw new Error('Invalid shared token');
+        const userToShare = await this.userRepository.getUserById(userData.userId);
+        if (!userToShare)
+            throw new Error('User not found');
+        await this.userRepository.updateUser(userToShare.id, { textAnswers: (userToShare.textAnswers - 3) });
     }
 }
 //# sourceMappingURL=UserService.js.map

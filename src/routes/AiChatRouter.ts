@@ -8,8 +8,15 @@ export function createAiChatRouter(chatService: IChatService): Router {
     const aiChatController = new AiChatController(chatService);
 
     router.post('/api/freeChat',
-        passport.authenticate('jwt', { session: false }),
         aiChatController.unregisteredUserChat.bind(aiChatController));
+
+    // router.post('/api/chat',
+    //     passport.authenticate('jwt', { session: false }),
+    //     aiChatController.userChat.bind(aiChatController));
+
+    router.get('/api/chatHistory/:individualId',
+        passport.authenticate('jwt', { session: false }),
+        aiChatController.getChatHistory.bind(aiChatController));    
 
     return router;
 }

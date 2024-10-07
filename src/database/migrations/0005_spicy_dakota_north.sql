@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "is_subscription_canceled" boolean DEFAULT false NOT NULL;

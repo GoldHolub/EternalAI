@@ -2,11 +2,12 @@ import { db } from '../../database/postgresDB.js';
 import { users } from '../../database/schema.js';
 import { eq } from 'drizzle-orm';
 export class UserRepository {
-    async createUser(user) {
+    async createUser(email, password, name) {
         const [newUser] = await db.insert(users)
             .values({
-            email: user.email,
-            password: user.password,
+            email: email,
+            password: password,
+            name: name,
         }).returning();
         return newUser;
     }

@@ -9,7 +9,6 @@ export function createQuestionsRouter(questionsService: IQuestionsService): Rout
     const questionsController = new QuestionController(questionsService);
 
     router.get('/individuals/questions',
-        passport.authenticate('jwt', { session: false }),
         questionsController.getQuestions.bind(questionsController));
 
     router.post('/individuals/questions',

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 20px;
+        }
+        .header img {
+            max-width: 150px;
+        }
+        .content h1 {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+        }
+        .content {
+            padding: 20px;
+            text-align: left;
+        }
+        .bill-details {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .bill-details th, .bill-details td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+        }
+        .bill-details th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            text-align: left;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 20px;
+        }
+    </style>
+    <title>Payment Receipt</title>
+</head>
+<body>
+    <div class="email-container">
+
+        <!-- Logo section -->
+        <div class="header">
+            <img src="cid:logoImage" alt="EternalAI Logo">
+        </div>
+
+        <!-- Main content section -->
+        <div class="content">
+            <h1>Thank you for your purchase!</h1>
+            <p>Below are the details of your recent purchase:</p>
+
+            <!-- Billing information table -->
+            <table class="bill-details">
+                <tr>
+                    <th>Product Name</th>
+                    <td>PRO Subscription</td>
+                </tr>
+                <tr>
+                    <th>Price</th>
+                    <td>$10.00</td>
+                </tr>
+                <tr>
+                    <th>Date</th>
+                    <td>{{currentDate}}</td>
+                </tr>
+                <tr>
+                    <th>Quantity</th>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <th>Owner</th>
+                    <td>{{userEmail}}</td>
+                </tr>
+                <tr>
+                    <th>Site</th>
+                    <td><a href="https://chat-sable-eight.vercel.app/">https://chat-sable-eight.vercel.app/</a></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>If you have any questions regarding this bill, please contact our support team.</p>
+        </div>
+    </div>
+</body>
+</html>

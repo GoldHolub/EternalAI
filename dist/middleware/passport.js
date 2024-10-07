@@ -9,7 +9,7 @@ const userRepository = new UserRepository();
 passport.use(new Strategy(opts, async (jwt_payload, done) => {
     try {
         const user = await userRepository.getUserById(jwt_payload.userId);
-        if (user) {
+        if (user && user.isVerified) {
             return done(null, user);
         }
         return done(null, false);

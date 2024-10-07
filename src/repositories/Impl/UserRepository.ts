@@ -5,11 +5,12 @@ import { IUserRepository } from '../IUserRepository.js';
 import { UserType } from '../../models/users.js';
 
 export class UserRepository implements IUserRepository {
-    async createUser(user: Omit<UserType, 'id' | 'name' | 'phone' |'role' | 'has_subscription' |'created_at'>): Promise<UserType> {
+    async createUser(email: string, password: string, name?: string): Promise<UserType> {
         const [newUser] = await db.insert(users)
             .values({
-                email: user.email,
-                password: user.password,
+                email: email,
+                password: password,
+                name: name,
             }).returning();
 
         return newUser;
@@ -18,7 +19,7 @@ export class UserRepository implements IUserRepository {
     async getUserById(id: number): Promise<UserType | null> {
         const [user] = await db.select()
             .from(users)
-            .where(eq(users.id, id)).limit(1);
+            .where(eq(users.id, id)).limit(1); 
 
         return user || null;
     }
