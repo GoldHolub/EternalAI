@@ -83,8 +83,25 @@ export class UserController {
                     isVerified: user.isVerified,
                     hasSubscription: user.has_subscription,
                     isSubscriptionCanceled: user.isSubscriptionCanceled,
+                    hasAcceptedPolicy: user.hasAcceptedPolicy,
                     nextBillingDate: subscription?.end_date || null,
                 });
+            }
+            else {
+                res.status(404).json({ error: 'User not found' });
+            }
+        }
+        catch (error) {
+            next(error);
+        }
+    }
+    async updateTernsOfPolicy(req, res, next) {
+        try {
+            const user = req.user;
+            const { hasAcceptedPolicy } = req.body;
+            const updatedUser = await this.userService.updateUser(user, { hasAcceptedPolicy: hasAcceptedPolicy });
+            if (updatedUser) {
+                res.status(200).json(updatedUser);
             }
             else {
                 res.status(404).json({ error: 'User not found' });
@@ -123,6 +140,7 @@ export class UserController {
                     phone: updatedUser.phone,
                     isVerified: updatedUser.isVerified,
                     hasSubscription: updatedUser.has_subscription,
+                    hasAcceptedPolicy: updatedUser.hasAcceptedPolicy,
                     created_at: updatedUser.created_at,
                 });
             }

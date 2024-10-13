@@ -43,6 +43,13 @@
       "when": 1728311683110,
       "tag": "0005_spicy_dakota_north",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1728652626597,
+      "tag": "0006_chief_betty_ross",
+      "breakpoints": true
     }
   ]
 }

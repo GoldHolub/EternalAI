@@ -14,6 +14,7 @@ export const users = pgTable('users', {
     isVerified: boolean('is_verified').notNull().default(false),
     isGoogleVerified: boolean('is_google_verified').notNull().default(false),
     isSubscriptionCanceled: boolean('is_subscription_canceled').notNull().default(false),
+    hasAcceptedPolicy: boolean('has_accepted_policy').notNull().default(false),
     created_at: timestamp('created_at').defaultNow().notNull(),
 });
 

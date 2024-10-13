@@ -3,3 +3,5 @@ node_modules
 fly.toml
 uploads
 data
+myKey
+myKey.pub

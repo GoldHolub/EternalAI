@@ -35,7 +35,6 @@ io.use(async (socket, next) => {
         if (!token) {
             return next(new Error('Authentication error'));
         }
-        // Verify JWT and attach user to socket
         jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
             const userRepository = new UserRepository();
             if (err) {

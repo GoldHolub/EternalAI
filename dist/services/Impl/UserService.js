@@ -94,7 +94,7 @@ export class UserService {
                 return null; // Neither password nor Google token provided
             }
             const token = this.createToken(user);
-            return { token, isVerified: user.isVerified };
+            return { token, isVerified: user.isVerified, hasAcceptedPolicy: user.hasAcceptedPolicy };
         }
         catch (error) {
             console.error('Error during login:', error);
@@ -258,9 +258,6 @@ export class UserService {
             email: Joi.string().email().required(),
             password: Joi.string().min(8).required(),
         });
-        if (!userData.email.includes('@gmail.com')) {
-            throw new Error(`Validation error: email must be a Gmail address`);
-        }
         const { error } = schema.validate(userData);
         if (error) {
             throw new Error(`Validation error: ${error.message}`);
@@ -272,7 +269,8 @@ export class UserService {
             name: Joi.string().min(3),
             phone: Joi.string().min(10),
             password: Joi.string().min(8),
-        }).or('email', 'name', 'phone', 'password');
+            hasAcceptedPolicy: Joi.boolean(),
+        }).or('email', 'name', 'phone', 'password', 'hasAcceptedPolicy');
         const { error } = schema.validate(updates);
         if (error) {
             throw new Error(`Validation error: ${error.message}`);

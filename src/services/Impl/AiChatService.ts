@@ -19,7 +19,7 @@ export class AiChatService implements IChatService {
     constructor() {
         //this.chatRepository = chatRepository;
     }
-    async startChat(user: UserType, individualId?: number, message?: string, questionId?: number): Promise<{response: string, individualId: number}> {
+    async startChat(user: UserType, individualId?: number, message?: string, questionId?: number): Promise<{ response: string, individualId: number, responseCount: number }> {
         try {
             if (!message && !questionId) {
                 throw new Error('Message or questionId is required');
@@ -31,9 +31,9 @@ export class AiChatService implements IChatService {
                 throw new Error('Please subscribe to use this feature');
             }
 
- 
+
             const individual = individualId ? await individualsRepository.getIndividualById(individualId)
-                                            : await this.getRandomIndividual() 
+                : await this.getRandomIndividual()
             if (!individual) {
                 throw new Error('Character not found');
             }
@@ -55,7 +55,7 @@ export class AiChatService implements IChatService {
             const newUserMessage = await chatRepository.createMessage(user.id, individual.id, 'user', userMessage!);
 
 
-            
+
             const characterPrompt = individual?.prompt;
             const response = await openAi.chat.completions.create({
                 model: "gpt-3.5-turbo", // Choose the appropriate model
@@ -69,16 +69,16 @@ export class AiChatService implements IChatService {
             const responseMessage = response.choices[0].message?.content || "I have nothing to say to you."
             const newResponseMessage = await chatRepository.createMessage(user.id, individual.id, 'individual', responseMessage);
             if (message) userRepository.updateUser(user.id, { textAnswers: ++user.textAnswers });
-            return {response: responseMessage, individualId: individual.id};
+            return { response: responseMessage, individualId: individual.id, responseCount: user.textAnswers };
         } catch (error: any) {
             throw new Error(`Failed to get start chat: ${error.message}`);
         }
     }
 
-    async startFreeChat(userId: number): Promise<{response: string, individualId: number}> {
+    async startFreeChat(userId: number): Promise<{ response: string, individualId: number }> {
         try {
             const individual = await this.getRandomIndividual();
-            
+
             const characterPrompt = individual?.prompt;
             const question = await questionsRepository.getQuestionById(userId);
             const response = await openAi.chat.completions.create({
@@ -89,8 +89,8 @@ export class AiChatService implements IChatService {
                 ],
                 max_tokens: 60, // control the response length
             });
-            const responseMessage =  response.choices[0].message?.content || "I have nothing to say to you.";
-            return {response: responseMessage, individualId: individual.id};
+            const responseMessage = response.choices[0].message?.content || "I have nothing to say to you.";
+            return { response: responseMessage, individualId: individual.id };
         } catch (error: any) {
             throw new Error(`Failed to get start free chat: ${error.message}`);
         }
@@ -118,7 +118,7 @@ export class AiChatService implements IChatService {
 
     private async getRandomIndividual(): Promise<IndividualsType> {
         try {
-            const individuals = await individualsRepository.getIndividuals({offset: 0, limit: 20});
+            const individuals = await individualsRepository.getIndividuals({ offset: 0, limit: 20 });
             const randomIndex = Math.floor(Math.random() * individuals.length);
             if (!individuals[randomIndex]) {
                 throw new Error('Character not found');

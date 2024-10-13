@@ -85,9 +85,8 @@ export class UserService implements IUserService {
         }
     }
 
-    async login(email?: string, password?: string, accessToken?: string): Promise<{ token: string, isVerified: boolean } | null> {
+    async login(email?: string, password?: string, accessToken?: string): Promise<{ token: string, isVerified: boolean, hasAcceptedPolicy: boolean } | null> {
         try {
-
             let user: UserType | null;
             if (accessToken) {
                 const validGoogleToken = await this.verifyGoogleToken(accessToken);
@@ -116,7 +115,7 @@ export class UserService implements IUserService {
                 return null; // Neither password nor Google token provided
             }
             const token = this.createToken(user);
-            return { token, isVerified: user.isVerified };
+            return { token, isVerified: user.isVerified, hasAcceptedPolicy: user.hasAcceptedPolicy };
         } catch (error) {
             console.error('Error during login:', error);
             throw new Error('Login failed. Please try again later.');
@@ -279,9 +278,6 @@ export class UserService implements IUserService {
             email: Joi.string().email().required(),
             password: Joi.string().min(8).required(),
         });
-        if (!userData.email.includes('@gmail.com')) {
-            throw new Error(`Validation error: email must be a Gmail address`);
-        }
 
         const { error } = schema.validate(userData);
         if (error) {
@@ -295,7 +291,8 @@ export class UserService implements IUserService {
             name: Joi.string().min(3),
             phone: Joi.string().min(10),
             password: Joi.string().min(8),
-        }).or('email', 'name', 'phone', 'password');
+            hasAcceptedPolicy: Joi.boolean(),
+        }).or('email', 'name', 'phone', 'password', 'hasAcceptedPolicy');
 
         const { error } = schema.validate(updates);
         if (error) {

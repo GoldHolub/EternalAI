@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 export class TokenService {
     async generateVerificationToken(userId, email) {
-        return jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        return jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '3d' });
     }
     verifyToken(token) {
         try {

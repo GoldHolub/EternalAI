@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "has_accepted_policy" boolean DEFAULT false NOT NULL;

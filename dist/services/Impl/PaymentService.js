@@ -71,8 +71,11 @@ export class PaymentService {
             if (customers.data.length === 0)
                 throw new Error('Customer not found');
             const customer = customers.data[0]; // Get customer
+            console.log(`customer.email: ${customer.email}, ${customer.id}`);
             const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
+            console.log(`subscriptions: ${subscriptions.data.length}`);
             const subscription = subscriptions.data[0];
+            console.log(`subscription.created: ${subscription.created}, ${subscription}`);
             if (!subscription)
                 throw new Error('Subscription not found for customer');
             const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
@@ -82,7 +85,7 @@ export class PaymentService {
             return { success: true };
         }
         catch (error) {
-            throw new Error('Failed to cancel subscription. Please try again later.');
+            throw new Error(`Failed to cancel subscription. Please try again later. ${error.message}`);
         }
     }
     async renewSubscription(user) {
@@ -102,6 +105,7 @@ export class PaymentService {
                 const resumedSubscription = await stripe.subscriptions.update(subscription.id, {
                     cancel_at_period_end: false,
                 });
+                userRepository.updateUser(user.id, { isSubscriptionCanceled: false });
                 return { success: true };
             }
             else {
@@ -132,7 +136,7 @@ export class PaymentService {
                 const user = await userRepository.getUserByEmail(customer.email);
                 if (!user)
                     return { received: true };
-                await userRepository.updateUser(user.id, { has_subscription: true });
+                await userRepository.updateUser(user.id, { has_subscription: true, isSubscriptionCanceled: false });
                 const subscription = await subscriptionService.createOrUpdateSubscription(user.id, new Date(), dateEnd);
                 emailService.sendPaymentSuccessEmail(customer.email);
             }

@@ -55,7 +55,7 @@ export class AiChatService {
             const newResponseMessage = await chatRepository.createMessage(user.id, individual.id, 'individual', responseMessage);
             if (message)
                 userRepository.updateUser(user.id, { textAnswers: ++user.textAnswers });
-            return { response: responseMessage, individualId: individual.id };
+            return { response: responseMessage, individualId: individual.id, responseCount: user.textAnswers };
         }
         catch (error) {
             throw new Error(`Failed to get start chat: ${error.message}`);

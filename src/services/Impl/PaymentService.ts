@@ -45,7 +45,7 @@ export class PaymentService implements IPaymentService {
     async updateSubscription(user: UserType, paymentMethodId: string): Promise<any> {
         try {
             const customers = await stripe.customers.list({
-                email: user.email, // Search for existing customer by email
+                email: user.email, 
                 limit: 1
             });
             if (customers.data.length < 0) throw new Error('Customer not found');
@@ -76,12 +76,12 @@ export class PaymentService implements IPaymentService {
     async cancelSubscription(user: UserType): Promise<any> {
         try {
             const customers = await stripe.customers.list({
-                email: user.email, // Search for existing customer by email
+                email: user.email, 
                 limit: 1
             });
 
             if (customers.data.length === 0) throw new Error('Customer not found');
-            const customer = customers.data[0]; // Get customer
+            const customer = customers.data[0];
             const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
             const subscription = subscriptions.data[0];
 
@@ -93,8 +93,8 @@ export class PaymentService implements IPaymentService {
 
             userRepository.updateUser(user.id, { isSubscriptionCanceled: true });
             return { success: true }
-        } catch (error) {
-            throw new Error('Failed to cancel subscription. Please try again later.');
+        } catch (error: any) {
+            throw new Error(`Failed to cancel subscription. Please try again later. ${error.message}`);
         }
     }
 
@@ -116,6 +116,8 @@ export class PaymentService implements IPaymentService {
                 const resumedSubscription = await stripe.subscriptions.update(subscription.id, {
                     cancel_at_period_end: false,
                 });
+
+                userRepository.updateUser(user.id, {isSubscriptionCanceled: false});
 
                 return { success: true };
             } else {
@@ -150,7 +152,7 @@ export class PaymentService implements IPaymentService {
 
                 if (!user) return { received: true };
 
-                await userRepository.updateUser(user.id, { has_subscription: true });
+                await userRepository.updateUser(user.id, { has_subscription: true, isSubscriptionCanceled: false });
                 const subscription = await subscriptionService.createOrUpdateSubscription(user.id, new Date(), dateEnd);
                 emailService.sendPaymentSuccessEmail(customer.email as string);
             }
@@ -189,7 +191,7 @@ export class PaymentService implements IPaymentService {
     async getOrCreateCustomer(customerEmail: string, customerName: string | null, paymentMethodId: string): Promise<string> {
         let customer;
         const customers = await stripe.customers.list({
-            email: customerEmail, // Search for existing customer by email
+            email: customerEmail, 
             limit: 1
         });
 
@@ -198,7 +200,6 @@ export class PaymentService implements IPaymentService {
             console.log('Customer exists:', customer.id);
             await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
 
-            // Update default payment method
             await stripe.customers.update(customer.id, {
                 invoice_settings: {
                     default_payment_method: paymentMethodId,
@@ -220,7 +221,7 @@ export class PaymentService implements IPaymentService {
 
     async updateUserStripeAccountEmail(oldEmail: string, newEmail: string): Promise<void> {
         const customers = await stripe.customers.list({
-            email: oldEmail, // Search for existing customer by email
+            email: oldEmail,
             limit: 1
         });
 

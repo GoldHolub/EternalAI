@@ -10,6 +10,7 @@ export function createUserRouter() {
     router.post('/user/forgotten-pass', userController.sendForgottenPasswordEmail.bind(userController));
     router.post('/user/reset-pass', userController.resetForgottenPassword.bind(userController));
     router.get('/user/profile', passport.authenticate('jwt', { session: false }), userController.getUserById.bind(userController));
+    router.put('/user/ternsOfPolicy', passport.authenticate('jwt', { session: false }), userController.updateTernsOfPolicy.bind(userController));
     router.put('/user/profile', passport.authenticate('jwt', { session: false }), userController.updateUser.bind(userController));
     router.get('/user/check-token', passport.authenticate('jwt', { session: false }), userController.checkToken.bind(userController));
     return router;

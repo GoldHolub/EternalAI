@@ -3,7 +3,7 @@ import { UserType } from "../models/users";
 export interface IUserService {
     registerUser(email?: string, password?: string, name?: string, googleToken?: string, sharedToken?: string): Promise<{ token: string } | null>;
 
-    login(email?: string, password?: string, googleToken?: string): Promise<{ token: string, isVerified: boolean } | null>;
+    login(email?: string, password?: string, googleToken?: string): Promise<{ token: string, isVerified: boolean, hasAcceptedPolicy: boolean } | null>;
 
     getUserById(id: number): Promise<UserType | null>;
 

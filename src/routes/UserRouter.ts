@@ -18,6 +18,10 @@ export function createUserRouter(): Router {
         passport.authenticate('jwt', { session: false }),
         userController.getUserById.bind(userController));
 
+    router.put('/user/ternsOfPolicy', 
+        passport.authenticate('jwt', { session: false }),
+        userController.updateTernsOfPolicy.bind(userController));    
+
     router.put('/user/profile',
         passport.authenticate('jwt', { session: false }),
         userController.updateUser.bind(userController));
