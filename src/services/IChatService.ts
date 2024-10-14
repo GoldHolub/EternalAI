@@ -1,6 +1,3 @@
-import { IndividualsType } from "../models/individuals.js";
-import { UserType } from "../models/users.js";
-import { PaginationOptions } from "../models/paginationOptions.js";
 import { ChatHistoryResponseDto } from "../models/dto/chatHistoryResponseDto.js";
 
 export interface IChatService {

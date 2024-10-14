@@ -44,15 +44,9 @@ export class PaymentService implements IPaymentService {
 
     async updateSubscription(user: UserType, paymentMethodId: string): Promise<any> {
         try {
-            const customers = await stripe.customers.list({
-                email: user.email, 
-                limit: 1
-            });
-            if (customers.data.length < 0) throw new Error('Customer not found');
-
-            const customer = customers.data[0];
-            const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
-            const subscriptionId = subscriptions.data[0].id;
+            const customer = await this.getCustomerByEmail(user.email);
+            const subscriptions = await this.getSubscriptionByCustomer(customer.id);
+            const subscriptionId = subscriptions?.id;
             if (!subscriptionId) throw new Error('Subscription not found for customer');
 
             await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
@@ -75,15 +69,8 @@ export class PaymentService implements IPaymentService {
 
     async cancelSubscription(user: UserType): Promise<any> {
         try {
-            const customers = await stripe.customers.list({
-                email: user.email, 
-                limit: 1
-            });
-
-            if (customers.data.length === 0) throw new Error('Customer not found');
-            const customer = customers.data[0];
-            const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
-            const subscription = subscriptions.data[0];
+            const customer = await this.getCustomerByEmail(user.email);
+            const subscription = await this.getSubscriptionByCustomer(customer.id);
 
             if (!subscription) throw new Error('Subscription not found for customer');
 
@@ -100,15 +87,8 @@ export class PaymentService implements IPaymentService {
 
     async renewSubscription(user: UserType): Promise<any> {
         try {
-            const customers = await stripe.customers.list({
-                email: user.email,
-                limit: 1
-            });
-
-            if (customers.data.length === 0) throw new Error('Customer not found');
-            const customer = customers.data[0];
-            const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
-            const subscription = subscriptions.data[0];
+            const customer =  await this.getCustomerByEmail(user.email);
+            const subscription = await this.getSubscriptionByCustomer(customer.id);
 
             if (!subscription) throw new Error('Subscription not found for customer');
 
@@ -220,17 +200,21 @@ export class PaymentService implements IPaymentService {
     }
 
     async updateUserStripeAccountEmail(oldEmail: string, newEmail: string): Promise<void> {
-        const customers = await stripe.customers.list({
-            email: oldEmail,
-            limit: 1
-        });
-
-        if (customers.data.length < 0) throw new Error('Customer not found');
-
-        const customer = customers.data[0];
+        const customer = await this.getCustomerByEmail(oldEmail);
         await stripe.customers.update(customer.id, {
             email: newEmail
         });
+    }
+
+    private async getCustomerByEmail(email: string): Promise<Stripe.Customer> {
+        const customers = await stripe.customers.list({ email, limit: 1 });
+        if (customers.data.length === 0) throw new Error('Customer not found');
+        return customers.data[0];
+    }
+
+    private async getSubscriptionByCustomer(customerId: string): Promise<Stripe.Subscription | null> {
+        const subscriptions = await stripe.subscriptions.list({ customer: customerId, limit: 1 });
+        return subscriptions.data.length > 0 ? subscriptions.data[0] : null;
     }
 }
 

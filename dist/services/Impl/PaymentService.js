@@ -36,15 +36,9 @@ export class PaymentService {
     }
     async updateSubscription(user, paymentMethodId) {
         try {
-            const customers = await stripe.customers.list({
-                email: user.email, // Search for existing customer by email
-                limit: 1
-            });
-            if (customers.data.length < 0)
-                throw new Error('Customer not found');
-            const customer = customers.data[0];
-            const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
-            const subscriptionId = subscriptions.data[0].id;
+            const customer = await this.getCustomerByEmail(user.email);
+            const subscriptions = await this.getSubscriptionByCustomer(customer.id);
+            const subscriptionId = subscriptions?.id;
             if (!subscriptionId)
                 throw new Error('Subscription not found for customer');
             await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
@@ -64,18 +58,8 @@ export class PaymentService {
     }
     async cancelSubscription(user) {
         try {
-            const customers = await stripe.customers.list({
-                email: user.email, // Search for existing customer by email
-                limit: 1
-            });
-            if (customers.data.length === 0)
-                throw new Error('Customer not found');
-            const customer = customers.data[0]; // Get customer
-            console.log(`customer.email: ${customer.email}, ${customer.id}`);
-            const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
-            console.log(`subscriptions: ${subscriptions.data.length}`);
-            const subscription = subscriptions.data[0];
-            console.log(`subscription.created: ${subscription.created}, ${subscription}`);
+            const customer = await this.getCustomerByEmail(user.email);
+            const subscription = await this.getSubscriptionByCustomer(customer.id);
             if (!subscription)
                 throw new Error('Subscription not found for customer');
             const canceledSubscription = await stripe.subscriptions.update(subscription.id, {
@@ -90,15 +74,8 @@ export class PaymentService {
     }
     async renewSubscription(user) {
         try {
-            const customers = await stripe.customers.list({
-                email: user.email,
-                limit: 1
-            });
-            if (customers.data.length === 0)
-                throw new Error('Customer not found');
-            const customer = customers.data[0];
-            const subscriptions = await stripe.subscriptions.list({ customer: customer.id, limit: 1 });
-            const subscription = subscriptions.data[0];
+            const customer = await this.getCustomerByEmail(user.email);
+            const subscription = await this.getSubscriptionByCustomer(customer.id);
             if (!subscription)
                 throw new Error('Subscription not found for customer');
             if (subscription.cancel_at_period_end) {
@@ -173,14 +150,13 @@ export class PaymentService {
     async getOrCreateCustomer(customerEmail, customerName, paymentMethodId) {
         let customer;
         const customers = await stripe.customers.list({
-            email: customerEmail, // Search for existing customer by email
+            email: customerEmail,
             limit: 1
         });
         if (customers.data.length > 0) {
             customer = customers.data[0];
             console.log('Customer exists:', customer.id);
             await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
-            // Update default payment method
             await stripe.customers.update(customer.id, {
                 invoice_settings: {
                     default_payment_method: paymentMethodId,
@@ -201,16 +177,20 @@ export class PaymentService {
         return customer.id;
     }
     async updateUserStripeAccountEmail(oldEmail, newEmail) {
-        const customers = await stripe.customers.list({
-            email: oldEmail, // Search for existing customer by email
-            limit: 1
-        });
-        if (customers.data.length < 0)
-            throw new Error('Customer not found');
-        const customer = customers.data[0];
+        const customer = await this.getCustomerByEmail(oldEmail);
         await stripe.customers.update(customer.id, {
             email: newEmail
         });
+    }
+    async getCustomerByEmail(email) {
+        const customers = await stripe.customers.list({ email, limit: 1 });
+        if (customers.data.length === 0)
+            throw new Error('Customer not found');
+        return customers.data[0];
+    }
+    async getSubscriptionByCustomer(customerId) {
+        const subscriptions = await stripe.subscriptions.list({ customer: customerId, limit: 1 });
+        return subscriptions.data.length > 0 ? subscriptions.data[0] : null;
     }
 }
 //# sourceMappingURL=PaymentService.js.map

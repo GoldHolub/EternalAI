@@ -2,7 +2,8 @@
   "scripts": {
     "start": "node dist/server.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx src/database/migrate.ts"
+    "db:migrate": "tsx src/database/migrate.ts",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",

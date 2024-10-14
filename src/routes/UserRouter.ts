@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import passport from '../middleware/passport.js';
 import { UserController } from '../controllers/UserController.js';
-import { IUserService } from '../services/IUserService.js';
 
 export function createUserRouter(): Router {
     const router = Router();

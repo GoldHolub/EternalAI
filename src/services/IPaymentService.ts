@@ -1,6 +1,5 @@
 import { UserType } from "../models/users";
 
-
 export interface IPaymentService {
     createSubscription(user: UserType, paymentMethodId: string): Promise<any>;
 

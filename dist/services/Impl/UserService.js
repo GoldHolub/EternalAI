@@ -86,7 +86,6 @@ export class UserService {
                 }
                 const isPasswordValid = await bcrypt.compare(password, user.password);
                 if (!isPasswordValid) {
-                    //throw new Error('Invalid password');
                     return null;
                 }
             }
