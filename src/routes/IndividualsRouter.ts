@@ -1,35 +1,34 @@
 import { Router } from 'express';
 import multer from 'multer';
-import passport from '../middleware/passport.js';
 import { IndividualsController } from '../controllers/IndividualsController.js';
 import { IndividualsService } from '../services/Impl/IndividualsService.js';
 import { IndividualsRepository } from '../repositories/Impl/IndividualsRepository.js';
+import { authenticateJWT } from './AiChatRouter.js';
 
 export function createIndividualsRouter(): Router {
     const router = Router();
     const upload = multer({ dest: 'uploads/' });
     const individualsController = new IndividualsController(new IndividualsService(new IndividualsRepository()));
 
-    router.get('/individuals',
+    router.get('/',
         individualsController.getIndividuals.bind(individualsController));
 
-    router.get('/individuals/image/:id',
+    router.get('/image/:id',
         individualsController.getIndividualImageById.bind(individualsController));
 
-
-    router.post('/individuals', 
-        passport.authenticate('jwt', { session: false }),
+    router.post('/', 
+        authenticateJWT(),
         upload.array('images'),
         individualsController.createIndividual.bind(individualsController));
 
-    router.put('/individuals/:id',
-        passport.authenticate('jwt', { session: false }),
+    router.put('/:id',
+        authenticateJWT(),
         upload.array('images'),
         individualsController.updateIndividual.bind(individualsController));
         
-    router.delete('/individuals/:id',
-        passport.authenticate('jwt', { session: false }),
+    router.delete('/:id',
+        authenticateJWT(),
         individualsController.deleteIndividual.bind(individualsController));
         
-    return router;
+    return Router().use('/individuals', router);
 }

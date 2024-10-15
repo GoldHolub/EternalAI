@@ -1,7 +1,9 @@
 .env
 node_modules
+dist
 fly.toml
 uploads
 data
 myKey
 myKey.pub
+.dockerignore

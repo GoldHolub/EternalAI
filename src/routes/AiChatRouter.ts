@@ -3,20 +3,19 @@ import passport from '../middleware/passport.js';
 import { AiChatController } from '../controllers/AiChatController.js';
 import { IChatService } from '../services/IChatService.js';
 
+export const authenticateJWT = () => passport.authenticate('jwt', { session: false });
+const router = Router();
+
 export function createAiChatRouter(chatService: IChatService): Router {
-    const router = Router();
+
     const aiChatController = new AiChatController(chatService);
 
-    router.post('/api/freeChat',
+    router.post('/freeChat',
         aiChatController.unregisteredUserChat.bind(aiChatController));
 
-    // router.post('/api/chat',
-    //     passport.authenticate('jwt', { session: false }),
-    //     aiChatController.userChat.bind(aiChatController));
+    router.get('/chatHistory/:individualId',
+        authenticateJWT(),
+        aiChatController.getChatHistory.bind(aiChatController));
 
-    router.get('/api/chatHistory/:individualId',
-        passport.authenticate('jwt', { session: false }),
-        aiChatController.getChatHistory.bind(aiChatController));    
-
-    return router;
+    return Router().use('/api', router);
 }

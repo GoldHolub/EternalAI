@@ -2,6 +2,7 @@ import { Router } from 'express';
 import passport from '../middleware/passport.js';
 import { PaymentController } from '../controllers/PaymentController.js';
 import bodyParser from 'body-parser';
+import { authenticateJWT } from './AiChatRouter.js';
 
 const paymentController = new PaymentController();
 
@@ -9,22 +10,22 @@ export function createPaymentRouter(): Router {
     const router = Router();
 
     router.post('/payment/create-subscription', 
-        passport.authenticate('jwt', { session: false }), 
+        authenticateJWT(), 
         paymentController.createSubscription.bind(paymentController)
     );
 
     router.put('/payment/update-subscription',  
-        passport.authenticate('jwt', { session: false }), 
+        authenticateJWT(),  
         paymentController.updateSubscription.bind(paymentController)
     );
 
     router.put('/payment/renew-subscription',  
-        passport.authenticate('jwt', { session: false }), 
+        authenticateJWT(),  
         paymentController.renewSubscription.bind(paymentController)
     );
 
     router.delete('/payment/cancel-subscription', 
-        passport.authenticate('jwt', { session: false }), 
+        authenticateJWT(),  
         paymentController.cancelSubscription.bind(paymentController)
     );
 
